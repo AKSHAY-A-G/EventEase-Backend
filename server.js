@@ -56,8 +56,8 @@ app.post('/api/payment/create-checkout-session', async (req, res) => {
       mode: 'payment',
       
       // Pass eventId back so we can register the user after payment
-      success_url: `http://localhost:5173/dashboard?status=success&eventId=${eventId}`,
-      cancel_url: `http://localhost:5173/events/${eventId}?status=cancel`,
+      success_url: `https://eventease27.netlify.app/dashboard?status=success&eventId=${eventId}`,
+      cancel_url: `https://eventease27.netlify.app/events/${eventId}?status=cancel`,
     });
 
     res.json({ url: session.url });
