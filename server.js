@@ -20,13 +20,13 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const app = express();
 
 // --- MIDDLEWARE (UPDATED FOR CORS) ---
-// This allows both your Localhost and your Netlify site to access the backend
+// ⚠️ FIX: Allow both Localhost (for testing) and Netlify (for production)
 app.use(cors({
   origin: [
-    "http://localhost:5173",                 // For local testing
-    "https://eventease27.netlify.app"        // For your live website
+    "http://localhost:5173",                 // Your laptop
+    "https://eventease27.netlify.app"        // Your deployed website
   ],
-  credentials: true
+  credentials: true                          // Allows cookies/headers to be sent
 }));
 
 // Increase body size limit to 50MB for large image uploads
