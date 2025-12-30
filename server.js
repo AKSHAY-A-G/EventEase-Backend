@@ -19,10 +19,17 @@ const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
-// --- MIDDLEWARE ---
-app.use(cors());
+// --- MIDDLEWARE (UPDATED FOR CORS) ---
+// This allows both your Localhost and your Netlify site to access the backend
+app.use(cors({
+  origin: [
+    "http://localhost:5173",                 // For local testing
+    "https://eventease27.netlify.app"        // For your live website
+  ],
+  credentials: true
+}));
 
-// ⚠️ FIX: Increase body size limit to 50MB for large image uploads
+// Increase body size limit to 50MB for large image uploads
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
