@@ -4,12 +4,22 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 
+// --- DEBUGGING: CHECK EMAIL VARIABLES ---
+console.log("------------------------------------------------");
+console.log("📧 EMAIL DEBUG START");
+console.log("1. EMAIL_USER:", process.env.EMAIL_USER ? `'${process.env.EMAIL_USER}'` : "❌ MISSING");
+console.log("2. EMAIL_PASS:", process.env.EMAIL_PASS ? "✅ LOADED (Hidden)" : "❌ MISSING");
+if (process.env.EMAIL_PASS) {
+    console.log("3. PASSWORD LENGTH:", process.env.EMAIL_PASS.length); // Should be 16 or 19 (if spaces included)
+}
+console.log("------------------------------------------------");
+// ----------------------------------------
+
 // --- STRIPE INITIALIZATION ---
 if (!process.env.STRIPE_SECRET_KEY) {
     console.error("❌ FATAL ERROR: STRIPE_SECRET_KEY is missing in .env");
     process.exit(1);
 }
-// .trim() removes accidental spaces from .env
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY.trim());
 
 // --- IMPORT ROUTES ---
@@ -19,17 +29,15 @@ const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
-// --- MIDDLEWARE (UPDATED FOR CORS) ---
-// ⚠️ FIX: Allow both Localhost (for testing) and Netlify (for production)
+// --- MIDDLEWARE ---
 app.use(cors({
   origin: [
-    "http://localhost:5173",                 // Your laptop
-    "https://eventease27.netlify.app"        // Your deployed website
+    "http://localhost:5173",                // Your laptop
+    "https://eventease27.netlify.app"       // Your deployed website
   ],
-  credentials: true                          // Allows cookies/headers to be sent
+  credentials: true
 }));
 
-// Increase body size limit to 50MB for large image uploads
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -61,8 +69,6 @@ app.post('/api/payment/create-checkout-session', async (req, res) => {
         quantity: 1,
       }],
       mode: 'payment',
-      
-      // Pass eventId back so we can register the user after payment
       success_url: `https://eventease27.netlify.app/dashboard?status=success&eventId=${eventId}`,
       cancel_url: `https://eventease27.netlify.app/events/${eventId}?status=cancel`,
     });
