@@ -4,12 +4,18 @@ const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const nodemailer = require('nodemailer'); // Import Nodemailer
 
-// --- EMAIL CONFIGURATION ---
+// --- EMAIL CONFIGURATION (UPDATED FOR RENDER) ---
+// We use Port 465 (Secure) to avoid timeouts on cloud servers
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use 'gmail' or your SMTP provider
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Helps prevent SSL errors in some cloud environments
   }
 });
 
@@ -38,55 +44,57 @@ router.post('/', async (req, res) => {
     // We need the User's email and Event's title/date/venue
     const fullBooking = await newBooking.populate(['user', 'event']);
 
-    // 4. GENERATE EMAIL CONTENT
-    const ticketId = fullBooking._id; // This is the Unique ID
-    const userEmail = fullBooking.user.email;
-    const userName = fullBooking.user.name || fullBooking.user.fullName || "Event Enthusiast";
-    const eventTitle = fullBooking.event.title;
-    const eventDate = fullBooking.event.date;
-    const eventVenue = fullBooking.event.venue;
+    if (fullBooking.user && fullBooking.event) {
+        // 4. GENERATE EMAIL CONTENT
+        const ticketId = fullBooking._id; // This is the Unique ID
+        const userEmail = fullBooking.user.email;
+        const userName = fullBooking.user.name || fullBooking.user.fullName || "Event Enthusiast";
+        const eventTitle = fullBooking.event.title;
+        // Format date nicely
+        const eventDate = new Date(fullBooking.event.date).toDateString();
+        const eventVenue = fullBooking.event.venue;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: userEmail,
-      subject: `🎟️ Your Ticket for ${eventTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-wIdth: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #2563EB; padding: 20px; text-align: center; color: white;">
-            <h1 style="margin: 0;">Event Ticket</h1>
-            <p style="margin: 5px 0 0;">Booking Confirmed</p>
-          </div>
-          
-          <div style="padding: 20px; background-color: #ffffff;">
-            <p>Hi <strong>${userName}</strong>,</p>
-            <p>Thank you for booking! Here is your official ticket.</p>
-            
-            <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h2 style="color: #1e293b; margin-top: 0;">${eventTitle}</h2>
-              <p><strong>📅 Date:</strong> ${eventDate}</p>
-              <p><strong>📍 Venue:</strong> ${eventVenue}</p>
-              <p><strong>🆔 Ticket ID:</strong> <span style="font-family: monospace; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${ticketId}</span></p>
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: userEmail,
+          subject: `🎟️ Your Ticket for ${eventTitle}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div style="background-color: #2563EB; padding: 20px; text-align: center; color: white;">
+                <h1 style="margin: 0;">Event Ticket</h1>
+                <p style="margin: 5px 0 0;">Booking Confirmed</p>
+              </div>
+              
+              <div style="padding: 20px; background-color: #ffffff;">
+                <p>Hi <strong>${userName}</strong>,</p>
+                <p>Thank you for booking! Here is your official ticket.</p>
+                
+                <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h2 style="color: #1e293b; margin-top: 0;">${eventTitle}</h2>
+                  <p><strong>📅 Date:</strong> ${eventDate}</p>
+                  <p><strong>📍 Venue:</strong> ${eventVenue}</p>
+                  <p><strong>🆔 Ticket ID:</strong> <span style="font-family: monospace; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${ticketId}</span></p>
+                </div>
+
+                <p style="color: #64748b; font-size: 14px;">Please show this email or Ticket ID at the entrance.</p>
+              </div>
+              
+              <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+                &copy; ${new Date().getFullYear()} EventEase. All rights reserved.
+              </div>
             </div>
+          `
+        };
 
-            <p style="color: #64748b; font-size: 14px;">Please show this email or Ticket ID at the entrance.</p>
-          </div>
-          
-          <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
-            &copy; ${new Date().getFullYear()} EventEase. All rights reserved.
-          </div>
-        </div>
-      `
-    };
-
-    // 5. SEND EMAIL
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        // Note: We don't fail the request if email fails, because booking is already saved.
-      } else {
-        console.log('Email sent: ' + info.response);
-      }
-    });
+        // 5. SEND EMAIL
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error("❌ Error sending email:", error);
+          } else {
+            console.log('✅ Email sent successfully:', info.response);
+          }
+        });
+    }
 
     res.status(201).json({ message: "Booking confirmed and Ticket sent!", booking: newBooking });
 
