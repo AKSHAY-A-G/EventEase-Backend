@@ -3,18 +3,26 @@ const mongoose = require('mongoose');
 const BookingSchema = new mongoose.Schema({
     user: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User', // References your User model
+        ref: 'User', 
         required: true 
     },
     event: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Event', // References your Event model
+        ref: 'Event', 
         required: true 
     },
-    bookedAt: { 
-        type: Date, 
-        default: Date.now 
+    status: {
+        type: String,
+        enum: ['pending', 'confirmed', 'cancelled'],
+        default: 'confirmed'
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'paid'
     }
+}, { 
+    timestamps: true
 });
 
 module.exports = mongoose.model('Booking', BookingSchema);
