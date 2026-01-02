@@ -7,7 +7,7 @@ const Event = require('../models/Event');
 const User = require('../models/User'); 
 const { isAdmin } = require('../middleware/authMiddleware');
 
-// --- MULTER CONFIGURATION (For Image Uploads) ---
+// --- MULTER CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); 
@@ -19,18 +19,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- EMAIL CONFIGURATION (FIXED FOR RENDER) ---
-// ⚠️ We removed 'service: gmail' and added Port 465 to prevent Timeouts
+// --- EMAIL CONFIGURATION (Standard TLS Fix) ---
+// ⚠️ We are switching back to 587 because 465 hung.
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Must be true for port 465
+  port: 587,
+  secure: false, // Must be false for port 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false // Helps with cloud SSL issues
   }
 });
 
@@ -64,7 +64,6 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
   try {
     const { title, category, price, date, venue, description } = req.body;
     
-    // Construct the image URL path if a file was uploaded
     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
 
     const newEvent = new Event({
@@ -79,21 +78,17 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
 
     const savedEvent = await newEvent.save();
 
-    // --- 🔔 NEW: SEND EMAIL NOTIFICATION TO ALL USERS ---
+    // --- 🔔 SEND EMAIL NOTIFICATION TO ALL USERS ---
     try {
-      // A. Fetch all users (only need their emails)
       const users = await User.find({}, 'email');
-      
-      // B. Create a list of emails (filter out empty ones)
       const emailList = users.map(user => user.email).filter(email => email);
 
       console.log("📧 PREPARING BROADCAST TO:", emailList.length, "USERS");
 
       if (emailList.length > 0) {
-        // C. Configure the Email
         const mailOptions = {
           from: process.env.EMAIL_USER,
-          bcc: emailList, // Use BCC to hide user emails from each other
+          bcc: emailList, 
           subject: `🔥 New Event Alert: ${title}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
@@ -130,7 +125,6 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
           `
         };
 
-        // D. Send the email
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) console.error("❌ BROADCAST EMAIL ERROR:", err);
           else console.log("✅ BROADCAST SENT:", info.response);
@@ -139,7 +133,6 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
     } catch (emailErr) {
       console.error("Email Notification Logic Failed:", emailErr);
     }
-    // --------------------------------------------------------
 
     res.status(201).json({ message: "Event published successfully!", event: savedEvent });
 
