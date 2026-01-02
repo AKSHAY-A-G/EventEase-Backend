@@ -2,21 +2,19 @@ const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking'); 
 const Event = require('../models/Event');
-const nodemailer = require('nodemailer'); // Import Nodemailer
+const nodemailer = require('nodemailer'); 
 
-// --- EMAIL CONFIGURATION (UPDATED FOR RENDER) ---
-// We use Port 465 (Secure) to avoid timeouts on cloud servers
+// --- BREVO EMAIL CONFIGURATION (FINAL FIREWALL BYPASS) ---
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true for 465, false for other ports
+  host: "smtp-relay.brevo.com",
+  port: 2525,     // ⚠️ Port 2525 is the secret alternative to 587
+  secure: false,  // False for 2525
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  tls: {
-    rejectUnauthorized: false // Helps prevent SSL errors in some cloud environments
-  }
+  // ⚠️ Force IPv4 to prevent DNS timeouts
+  family: 4 
 });
 
 // --- 1. CREATE BOOKING + SEND TICKET EMAIL ---
@@ -55,7 +53,8 @@ router.post('/', async (req, res) => {
         const eventVenue = fullBooking.event.venue;
 
         const mailOptions = {
-          from: process.env.EMAIL_USER,
+          // IMPORTANT: Use your verified Gmail here so users recognize you
+          from: '"EventEase Team" <akshaygeorge2772@gmail.com>', 
           to: userEmail,
           subject: `🎟️ Your Ticket for ${eventTitle}`,
           html: `

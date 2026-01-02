@@ -19,15 +19,17 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- BREVO EMAIL CONFIGURATION (FINAL) ---
+// --- BREVO EMAIL CONFIGURATION (FINAL FIREWALL BYPASS) ---
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // Keep false for 587
+  port: 2525,     // ⚠️ Port 2525 is the secret alternative to 587
+  secure: false,  // False for 2525
   auth: {
-    user: process.env.EMAIL_USER, // This will be the 9f257... ID from Render
-    pass: process.env.EMAIL_PASS  // This will be the xkeysib... Key from Render
-  }
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  // ⚠️ Force IPv4 to prevent DNS timeouts
+  family: 4 
 });
 
 // --- ROUTES ---
