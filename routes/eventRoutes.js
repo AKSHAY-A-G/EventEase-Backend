@@ -19,19 +19,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- EMAIL CONFIGURATION (Standard TLS Fix) ---
-// ⚠️ We are switching back to 587 because 465 hung.
+// --- EMAIL CONFIGURATION (THE IPv4 FIX) ---
+// ⚠️ 'family: 4' forces the server to use IPv4, which prevents the timeout!
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // Must be false for port 587
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  tls: {
-    rejectUnauthorized: false // Helps with cloud SSL issues
-  }
+  // This line fixes the Render timeout issue:
+  family: 4 
 });
 
 // --- ROUTES ---
