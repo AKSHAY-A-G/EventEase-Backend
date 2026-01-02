@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer'); 
 const path = require('path');
-const nodemailer = require('nodemailer'); // 1. Import Nodemailer
+const nodemailer = require('nodemailer'); 
 const Event = require('../models/Event');
-const User = require('../models/User'); // 2. Import User Model to get emails
+const User = require('../models/User'); 
 const { isAdmin } = require('../middleware/authMiddleware');
 
-// --- MULTER CONFIGURATION (For Image Uploads) ---
+// --- MULTER CONFIGURATION ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); 
@@ -19,12 +19,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --- EMAIL CONFIGURATION (Reusable Transporter) ---
+// --- EMAIL CONFIGURATION (UPDATED FOR RENDER) ---
+// Using Port 465 (SSL) to prevent timeouts
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -33,7 +39,7 @@ const transporter = nodemailer.createTransport({
 // 1. GET ALL EVENTS
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: 1 }); // Sorted by date
+    const events = await Event.find().sort({ date: 1 }); 
     res.status(200).json(events);
   } catch (err) {
     res.status(500).json({ message: "Error fetching events", error: err.message });
@@ -58,7 +64,6 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
   try {
     const { title, category, price, date, venue, description } = req.body;
     
-    // Construct the image URL path if a file was uploaded
     const imagePath = req.file ? `/uploads/${req.file.filename}` : "";
 
     const newEvent = new Event({
@@ -73,19 +78,15 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
 
     const savedEvent = await newEvent.save();
 
-    // --- 🔔 NEW: SEND EMAIL NOTIFICATION TO ALL USERS ---
+    // --- 🔔 SEND EMAIL NOTIFICATION TO ALL USERS ---
     try {
-      // A. Fetch all users (only need their emails)
       const users = await User.find({}, 'email');
-      
-      // B. Create a list of emails (filter out empty ones)
       const emailList = users.map(user => user.email).filter(email => email);
 
       if (emailList.length > 0) {
-        // C. Configure the Email
         const mailOptions = {
           from: process.env.EMAIL_USER,
-          bcc: emailList, // Use BCC to hide user emails from each other
+          bcc: emailList, 
           subject: `🔥 New Event Alert: ${title}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
@@ -108,9 +109,9 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
                 <p style="color: #475569;">${description.substring(0, 150)}...</p>
 
                 <div style="text-align: center; margin-top: 30px;">
-                  <a href="http://localhost:5173/events" 
-                     style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                     View Event Details
+                  <a href="https://eventease27.netlify.app/events" 
+                      style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                      View Event Details
                   </a>
                 </div>
               </div>
@@ -122,16 +123,14 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
           `
         };
 
-        // D. Send the email (Non-blocking)
         transporter.sendMail(mailOptions, (err, info) => {
-          if (err) console.error("Error sending broadcast email:", err);
-          else console.log("📢 Broadcast email sent to " + emailList.length + " users.");
+          if (err) console.error("❌ Error sending broadcast email:", err);
+          else console.log("✅ Broadcast email sent to " + emailList.length + " users.");
         });
       }
     } catch (emailErr) {
       console.error("Email Notification Failed (Event still saved):", emailErr);
     }
-    // --------------------------------------------------------
 
     res.status(201).json({ message: "Event published successfully!", event: savedEvent });
 
@@ -141,12 +140,11 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
   }
 });
 
-// 4. PUT: UPDATE EXISTING EVENT (Protected + Image Upload)
+// 4. PUT: UPDATE EXISTING EVENT
 router.put('/:id', isAdmin, upload.single('image'), async (req, res) => {
   try {
     const { title, category, price, date, venue, description } = req.body;
     
-    // Create an update object
     let updateData = {
       title,
       category,
@@ -156,7 +154,6 @@ router.put('/:id', isAdmin, upload.single('image'), async (req, res) => {
       description
     };
 
-    // Only update the image if a new file is uploaded
     if (req.file) {
       updateData.image = `/uploads/${req.file.filename}`;
     }
