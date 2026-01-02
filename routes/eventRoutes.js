@@ -90,11 +90,45 @@ router.post('/', isAdmin, upload.single('image'), async (req, res) => {
           bcc: emailList, 
           subject: `🔥 New Event Alert: ${title}`,
           html: `
-            <h1>New Event: ${title}</h1>
-            <p>We are excited to announce a new event on ${new Date(date).toDateString()} at ${venue}.</p>
-            <p>Price: ₹${price}</p>
-            <br>
-            <a href="https://eventease27.netlify.app/events">View Details</a>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+              
+              <div style="background-color: #2563EB; padding: 20px; text-align: center; color: white;">
+                {/* ⬇️ LOGO ADDED HERE ⬇️ */}
+                <img 
+                  src="https://eventease27.netlify.app/Images/logo.png" 
+                  alt="EventEase" 
+                  style="width: 60px; height: auto; margin-bottom: 10px;" 
+                />
+
+                <h1 style="margin: 0;">New Event Announced!</h1>
+              </div>
+              
+              <div style="padding: 20px; background-color: #ffffff;">
+                <h2 style="color: #333; margin-top: 0;">${title}</h2>
+                <p style="color: #555; font-size: 16px;">
+                  We are excited to announce a new event! Check out the details below:
+                </p>
+                
+                <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${new Date(date).toDateString()}</p>
+                  <p style="margin: 5px 0;"><strong>📍 Venue:</strong> ${venue}</p>
+                  <p style="margin: 5px 0;"><strong>💰 Price:</strong> ₹${price}</p>
+                </div>
+
+                <p style="color: #475569;">${description.substring(0, 150)}...</p>
+
+                <div style="text-align: center; margin-top: 30px;">
+                  <a href="https://eventease27.netlify.app/events" 
+                     style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                     View Event Details
+                  </a>
+                </div>
+              </div>
+              
+              <div style="background-color: #f1f5f9; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+                &copy; ${new Date().getFullYear()} EventEase. All rights reserved.
+              </div>
+            </div>
           `
         };
 

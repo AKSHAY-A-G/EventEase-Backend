@@ -59,7 +59,15 @@ router.post('/', async (req, res) => {
           subject: `🎟️ Your Ticket for ${eventTitle}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+              
               <div style="background-color: #2563EB; padding: 20px; text-align: center; color: white;">
+                {/* ⬇️ LOGO ADDED HERE ⬇️ */}
+                <img 
+                  src="https://eventease27.netlify.app/Images/logo.png" 
+                  alt="EventEase" 
+                  style="width: 60px; height: auto; margin-bottom: 10px;" 
+                />
+                
                 <h1 style="margin: 0;">Event Ticket</h1>
                 <p style="margin: 5px 0 0;">Booking Confirmed</p>
               </div>
