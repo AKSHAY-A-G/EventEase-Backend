@@ -20,14 +20,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // --- EMAIL CONFIGURATION (THE IPv4 FIX) ---
-// ⚠️ 'family: 4' forces the server to use IPv4, which prevents the timeout!
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  // This line fixes the Render timeout issue:
+  // ⚠️ THIS IS THE MAGIC LINE THAT FIXES THE TIMEOUT ⚠️
   family: 4 
 });
 
